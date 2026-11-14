@@ -15,12 +15,18 @@ import Copy from "../components/Copy.astro";
     </p>
 
     <h2 id="install">Install</h2>
+    <p>On macOS and Linux, with Homebrew:</p>
+    <Copy text="brew install texshelf/tap/texshelf" />
+    <p>On macOS and Linux, without Homebrew:</p>
+    <Copy text="curl -fsSL https://tex.jjsm.science/install.sh | sh" />
+    <p>On Windows, in PowerShell:</p>
+    <Copy text="irm https://tex.jjsm.science/install.ps1 | iex" />
     <p>
-      There are no prebuilt downloads yet. For now you need
-      <a href="https://rustup.rs">Rust</a>, and then:
+      The scripts download the latest release from GitHub, check its SHA-256, and put both
+      commands in <code>~/.local/bin</code> (on Windows, <code>%LOCALAPPDATA%\texshelf\bin</code>).
+      With <a href="https://rustup.rs">Rust</a> you can build from source instead:
     </p>
     <Copy text="cargo install --git https://github.com/texshelf/texshelf texshelf" />
-    <p>Homebrew, a shell installer and Windows packages will follow the first tagged release.</p>
 
     <h2 id="start">Create a project</h2>
     <Copy text="texshelf init article my-paper" />
