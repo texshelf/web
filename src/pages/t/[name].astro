@@ -4,6 +4,7 @@ import Copy from "../../components/Copy.astro";
 import {
   templates,
   stars,
+  downloads,
   latest,
   local,
   command,
@@ -22,6 +23,7 @@ const v = latest(t);
 const cli = command(t);
 const editor = editorLink(t, v);
 const starCount = stars(t.name);
+const downloadCount = downloads(t.name);
 const variables = Object.entries(v.variables ?? {});
 const withVars = variables.length
   ? `${cli} init ${t.name} my-project --var ${variables[0][0]}="${variables[0][1].default}"`
@@ -146,6 +148,8 @@ const tabs = [
         {t.repository && <dd><a href={t.repository}>{t.repository.replace("https://", "")}</a></dd>}
         {starCount > 0 && <dt>GitHub stars</dt>}
         {starCount > 0 && <dd>{starCount.toLocaleString("en")}</dd>}
+        {downloadCount > 0 && <dt>Downloads</dt>}
+        {downloadCount > 0 && <dd>{downloadCount.toLocaleString("en")}</dd>}
         <dt>Categories</dt>
         <dd>{t.categories.join(", ")}</dd>
         <dt>Maintained by</dt>

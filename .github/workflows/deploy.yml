@@ -74,12 +74,12 @@ jobs:
       - name: Build archives, previews and the index
         run: |
           mkdir -p previous/v1
-          tool/bin/texshelf-registry build --registry registry --out dist/v1 --previous previous/v1
+          tool/bin/texshelf-registry build --registry registry --out dist/v1 --previous previous/v1 --download-url https://tex.jjsm.science/dl
 
       - name: Collect star counts
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: tool/bin/texshelf-registry stats --index dist/v1/index.json --out dist/v1/stats.json --previous previous/v1/stats.json
+        run: tool/bin/texshelf-registry stats --index dist/v1/index.json --out dist/v1/stats.json --previous previous/v1/stats.json --downloads-url https://tex.jjsm.science/api/downloads
 
       - name: Keep this output for the next run
         run: |

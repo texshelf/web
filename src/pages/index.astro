@@ -1,7 +1,7 @@
 ---
 import Base from "../layouts/Base.astro";
 import Copy from "../components/Copy.astro";
-import { templates, stars, latest, local, engineName } from "../lib/registry";
+import { templates, stars, downloads, latest, local, engineName } from "../lib/registry";
 
 const categories = [...new Set(templates.flatMap((t) => t.categories))].sort();
 const ordered = [...templates].sort(
@@ -43,6 +43,7 @@ const ordered = [...templates].sort(
       <span>Sort by</span>
       <select name="sort">
         <option value="official">Official first</option>
+        <option value="downloads">Downloads</option>
         <option value="stars">Stars</option>
         <option value="newest">Newest</option>
         <option value="name">Name</option>
@@ -66,6 +67,7 @@ const ordered = [...templates].sort(
               .toLowerCase()}
             data-official={t.official ? 1 : 0}
             data-stars={stars(t.name)}
+            data-downloads={downloads(t.name)}
             data-updated={t.updated}
           >
             <a href={`/t/${t.name}`}>
@@ -111,6 +113,7 @@ const ordered = [...templates].sort(
 
     const order: Record<string, (a: HTMLElement, b: HTMLElement) => number> = {
       official: (a, b) => Number(b.dataset.official) - Number(a.dataset.official),
+      downloads: (a, b) => Number(b.dataset.downloads) - Number(a.dataset.downloads),
       stars: (a, b) => Number(b.dataset.stars) - Number(a.dataset.stars),
       newest: (a, b) => b.dataset.updated!.localeCompare(a.dataset.updated!),
       name: () => 0,

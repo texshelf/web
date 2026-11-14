@@ -1,3 +1,9 @@
 name = "texshelf"
 pages_build_output_dir = "dist"
 compatibility_date = "2026-11-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "texshelf-downloads"
+database_id = "d58f2267-d29d-4f81-bea3-51cc48d08fdd"
+migrations_dir = "migrations"

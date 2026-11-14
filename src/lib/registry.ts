@@ -58,6 +58,10 @@ export function stars(name: string): number {
   return stats.templates?.[name]?.stars ?? 0;
 }
 
+export function downloads(name: string): number {
+  return stats.templates?.[name]?.downloads ?? 0;
+}
+
 export function latest(t: Template): Version {
   return t.versions.find((v) => v.version === t.latest) ?? t.versions[0];
 }

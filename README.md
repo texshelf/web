@@ -41,6 +41,26 @@ colours and logos in the brand repository.
 | `/t/<name>` | `src/pages/t/[name].astro` | Preview, the commands to use the template, license and file list |
 | `/docs` | `src/pages/docs.astro` | Install and usage |
 | `/v1/*` | copied from the registry build | `index.json`, `stats.json`, archives, previews |
+| `/dl/<name>/<version>/<file>` | `functions/dl/` | Serves an archive from `/v1` and counts the download |
+| `/api/downloads` | `functions/api/downloads.js` | Download totals per template, as JSON |
+
+## Download counts
+
+The index lists archives under `/dl/`, so the CLI, the Download tab and Overleaf
+all pass through the counter. It is a Pages Function that adds one to a row in
+a D1 database named `texshelf-downloads` and then returns the file from `/v1`.
+The nightly deploy reads `/api/downloads` and writes the totals into
+`stats.json`, so the numbers on the site and in `texshelf search --sort downloads`
+are at most a day old.
+
+The table is created by `migrations/0001_downloads.sql`:
+
+```console
+npx wrangler d1 migrations apply texshelf-downloads --remote
+```
+
+To try it locally, run `npx wrangler d1 migrations apply texshelf-downloads --local`
+once, then `npx wrangler pages dev dist`.
 
 ## Deploying
 
