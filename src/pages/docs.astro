@@ -1,0 +1,98 @@
+---
+import Base from "../layouts/Base.astro";
+import Copy from "../components/Copy.astro";
+---
+<Base
+  title="Docs: install and use texshelf"
+  description="Install texshelf and typshelf, create a project from a template, and publish your own template."
+>
+  <article class="prose">
+    <h1>Using texshelf</h1>
+    <p>
+      One install gives you two commands. <code>texshelf</code> lists LaTeX templates by default
+      and <code>typshelf</code> lists Typst ones. Everything else about them is the same, and
+      either can create a project from any template.
+    </p>
+
+    <h2 id="install">Install</h2>
+    <p>
+      There are no prebuilt downloads yet. For now you need
+      <a href="https://rustup.rs">Rust</a>, and then:
+    </p>
+    <Copy text="cargo install --git https://github.com/texshelf/texshelf texshelf" />
+    <p>Homebrew, a shell installer and Windows packages will follow the first tagged release.</p>
+
+    <h2 id="start">Create a project</h2>
+    <Copy text="texshelf init article my-paper" />
+    <p>
+      This downloads the template, checks it against the checksum in the index, unpacks it into
+      <code>my-paper/</code>, asks for the title and author, and runs <code>git init</code>. It
+      then prints the command that compiles the document. Nothing is compiled for you.
+    </p>
+    <table>
+      <thead><tr><th>Option</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><code>article@1.0.0</code></td><td>Use a specific version instead of the latest</td></tr>
+        <tr><td><code>--var title="Lab 3"</code></td><td>Set a variable without being asked</td></tr>
+        <tr><td><code>--yes</code></td><td>Keep the defaults for every variable</td></tr>
+        <tr><td><code>--no-git</code></td><td>Skip <code>git init</code></td></tr>
+        <tr><td><code>--force</code></td><td>Write into a folder that already has files</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="find">Find a template</h2>
+    <Copy text="texshelf search thesis --sort stars" />
+    <table>
+      <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><code>search [words]</code></td><td>Search names, titles, keywords and descriptions. Filter with <code>--category</code>, <code>--license</code>, <code>--official</code>; order with <code>--sort stars|newest|name|official</code>.</td></tr>
+        <tr><td><code>info &lt;name&gt;</code></td><td>License, versions, variables and file count</td></tr>
+        <tr><td><code>view &lt;name&gt;</code></td><td>Open the prebuilt PDF preview. No TeX install needed.</td></tr>
+        <tr><td><code>open &lt;name&gt;</code></td><td>Open the template in Overleaf, or in the Typst web app when it is on Typst Universe</td></tr>
+        <tr><td><code>update</code></td><td>Refresh the local copy of the index. This also happens by itself once a day.</td></tr>
+        <tr><td><code>doctor [file.tex]</code></td><td>List the TeX and Typst tools on your machine and the packages a document needs but you lack</td></tr>
+      </tbody>
+    </table>
+    <p>
+      Add <code>--engine all</code> to search both engines at once, and <code>--json</code> to
+      <code>search</code> or <code>info</code> for output a script can read.
+    </p>
+
+    <h2 id="publish">Publish a template</h2>
+    <p>
+      Templates stay in your own repository. The
+      <a href="https://github.com/texshelf/registry">registry</a> holds one small file per
+      version that says where the template lives, which commit to take, and how to compile it.
+    </p>
+    <ol>
+      <li>Make sure the template compiles from a clean checkout and has a license that allows redistribution.</li>
+      <li>Copy an existing manifest in the registry to <code>templates/&lt;name&gt;/&lt;version&gt;.toml</code> and fill it in. <code>rev</code> must be a full commit hash.</li>
+      <li>Run <code>texshelf validate</code> on the file, then open a pull request.</li>
+    </ol>
+    <p>
+      CI fetches that commit, compiles it in a full TeX Live or Typst container without
+      shell-escape, and attaches the rendered PDF to the pull request. Once it is merged, the
+      template appears here and in the CLI within a few minutes. A published version never
+      changes; to update a template, add a new version file.
+    </p>
+
+    <h2 id="files">What it stores on your machine</h2>
+    <p>
+      The index, downloaded archives and previews live in your user cache folder
+      (<code>~/Library/Caches/science.jjsm.texshelf</code> on macOS,
+      <code>~/.cache/texshelf</code> on Linux). Deleting it is safe. Each project gets a
+      <code>.texshelf.lock</code> file that records which template and version it came from.
+    </p>
+  </article>
+
+  <script>
+    document.addEventListener("click", async (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-copy]");
+      if (!button) return;
+      await navigator.clipboard.writeText(button.dataset.copy!);
+      const label = button.textContent;
+      button.textContent = "Copied";
+      setTimeout(() => (button.textContent = label), 1500);
+    });
+  </script>
+</Base>

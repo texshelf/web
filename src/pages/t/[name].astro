@@ -1,0 +1,222 @@
+---
+import Base from "../../layouts/Base.astro";
+import Copy from "../../components/Copy.astro";
+import {
+  templates,
+  stars,
+  latest,
+  local,
+  command,
+  editorLink,
+  engineName,
+  kilobytes,
+  type Template,
+} from "../../lib/registry";
+
+export function getStaticPaths() {
+  return templates.map((t) => ({ params: { name: t.name }, props: { t } }));
+}
+
+const { t } = Astro.props as { t: Template };
+const v = latest(t);
+const cli = command(t);
+const editor = editorLink(t, v);
+const starCount = stars(t.name);
+const variables = Object.entries(v.variables ?? {});
+const withVars = variables.length
+  ? `${cli} init ${t.name} my-project --var ${variables[0][0]}="${variables[0][1].default}"`
+  : null;
+const tabs = [
+  { id: "terminal", label: "Terminal" },
+  ...(editor ? [{ id: "editor", label: t.engine === "latex" ? "Overleaf" : "Typst app" }] : []),
+  { id: "download", label: "Download" },
+  ...(t.repository ? [{ id: "git", label: "Git" }] : []),
+];
+---
+<Base title={`${t.title} (${engineName[t.engine]} template) on texshelf`} description={t.description}>
+  <p class="back"><a href="/">All templates</a></p>
+
+  <div class="detail">
+    <div class="sheet">
+      {
+        v.thumbnail ? (
+          <a href={v.preview ? local(v.preview) : undefined}>
+            <img src={local(v.thumbnail)} alt={`First page of ${t.title}`} />
+          </a>
+        ) : (
+          <p class="blank">
+            <span>{t.title}</span>
+            <small>The preview for this template has not been built yet.</small>
+          </p>
+        )
+      }
+      {v.preview && <p><a href={local(v.preview)}>Open the full PDF preview</a></p>}
+    </div>
+
+    <div class="about">
+      <h1>{t.title}</h1>
+      <p class="lede">{t.description}</p>
+
+      <section class="use" aria-label="Use this template">
+        <div class="tabs" role="tablist">
+          {
+            tabs.map((tab, i) => (
+              <button
+                type="button"
+                role="tab"
+                id={`tab-${tab.id}`}
+                aria-controls={`panel-${tab.id}`}
+                aria-selected={i === 0 ? "true" : "false"}
+                tabindex={i === 0 ? 0 : -1}
+              >
+                {tab.label}
+              </button>
+            ))
+          }
+        </div>
+
+        <div role="tabpanel" id="panel-terminal" aria-labelledby="tab-terminal">
+          <Copy text={`${cli} init ${t.name}`} />
+          {withVars && (
+            <p>
+              Set the {variables.map(([k]) => k).join(" and ")} while creating it:
+            </p>
+          )}
+          {withVars && <Copy text={withVars} />}
+          <p>
+            No {cli} yet? See <a href="/docs#install">how to install it</a>.
+          </p>
+        </div>
+
+        {
+          editor && (
+            <div role="tabpanel" id="panel-editor" aria-labelledby="tab-editor" hidden>
+              <p>
+                {t.engine === "latex"
+                  ? "Overleaf creates a new project in your account from this template's zip file."
+                  : "The Typst web app creates a new project from this template on Typst Universe."}
+              </p>
+              <a class="button" href={editor.href} rel="noopener">
+                {editor.label}
+              </a>
+            </div>
+          )
+        }
+
+        <div role="tabpanel" id="panel-download" aria-labelledby="tab-download" hidden>
+          <p>
+            <a class="button" href={local(v.zip.url)}>Download .zip ({kilobytes(v.zip.size)})</a>
+            <a class="button plain" href={local(v.tarball.url)}>.tar.gz</a>
+          </p>
+          <p class="hash">SHA-256 of the .tar.gz: <code>{v.tarball.sha256}</code></p>
+        </div>
+
+        {
+          t.repository && (
+            <div role="tabpanel" id="panel-git" aria-labelledby="tab-git" hidden>
+              <Copy text={`git clone ${t.repository}`} />
+              <p>This clones the author's whole repository, which can hold more than the template.</p>
+            </div>
+          )
+        }
+      </section>
+
+      {
+        v.shell_escape && (
+          <p class="warn">
+            This template needs shell-escape, which lets the document run commands on your
+            computer while it compiles. Read the source before you build it.
+          </p>
+        )
+      }
+
+      <dl class="facts">
+        <dt>Engine</dt>
+        <dd>
+          {engineName[t.engine]}
+          {v.compiler && ` (${v.compiler}${v.bib && v.bib !== "none" ? `, ${v.bib}` : ""})`}
+        </dd>
+        <dt>License</dt>
+        <dd><a href={`https://spdx.org/licenses/${t.license}.html`}>{t.license}</a></dd>
+        <dt>Version</dt>
+        <dd>{v.version}, added {v.published}</dd>
+        <dt>{t.authors.length === 1 ? "Author" : "Authors"}</dt>
+        <dd>{t.authors.join(", ")}</dd>
+        {t.repository && <dt>Source</dt>}
+        {t.repository && <dd><a href={t.repository}>{t.repository.replace("https://", "")}</a></dd>}
+        {starCount > 0 && <dt>GitHub stars</dt>}
+        {starCount > 0 && <dd>{starCount.toLocaleString("en")}</dd>}
+        <dt>Categories</dt>
+        <dd>{t.categories.join(", ")}</dd>
+        <dt>Maintained by</dt>
+        <dd>
+          {t.official ? "the texshelf project" : t.verified ? "its author, who also published it here" : "its author; imported from the source repository"}
+        </dd>
+      </dl>
+
+      {
+        variables.length > 0 && (
+          <section>
+            <h2>Variables</h2>
+            <table>
+              <thead>
+                <tr><th>Name</th><th>Asks for</th><th>Default</th></tr>
+              </thead>
+              <tbody>
+                {variables.map(([key, variable]) => (
+                  <tr>
+                    <td><code>{key}</code></td>
+                    <td>{variable.prompt}</td>
+                    <td>{variable.default}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        )
+      }
+
+      <details>
+        <summary>{v.files.length} files, starting from <code>{v.entrypoint}</code></summary>
+        <ul class="files">
+          {v.files.map((f) => <li>{f}</li>)}
+        </ul>
+      </details>
+    </div>
+  </div>
+
+  <script>
+    const list = document.querySelector('[role="tablist"]')!;
+    const tabs = [...list.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+
+    function select(tab: HTMLButtonElement) {
+      for (const other of tabs) {
+        const on = other === tab;
+        other.setAttribute("aria-selected", String(on));
+        other.tabIndex = on ? 0 : -1;
+        document.getElementById(other.getAttribute("aria-controls")!)!.hidden = !on;
+      }
+      tab.focus();
+    }
+
+    list.addEventListener("click", (event) => {
+      const tab = (event.target as HTMLElement).closest<HTMLButtonElement>('[role="tab"]');
+      if (tab) select(tab);
+    });
+    list.addEventListener("keydown", (event) => {
+      const key = (event as KeyboardEvent).key;
+      if (key !== "ArrowRight" && key !== "ArrowLeft") return;
+      const at = tabs.indexOf(document.activeElement as HTMLButtonElement);
+      select(tabs[(at + (key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length]);
+    });
+
+    document.addEventListener("click", async (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-copy]");
+      if (!button) return;
+      await navigator.clipboard.writeText(button.dataset.copy!);
+      const label = button.textContent;
+      button.textContent = "Copied";
+      setTimeout(() => (button.textContent = label), 1500);
+    });
+  </script>
+</Base>

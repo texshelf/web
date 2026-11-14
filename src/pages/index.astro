@@ -1,0 +1,161 @@
+---
+import Base from "../layouts/Base.astro";
+import Copy from "../components/Copy.astro";
+import { templates, stars, latest, local, engineName } from "../lib/registry";
+
+const categories = [...new Set(templates.flatMap((t) => t.categories))].sort();
+const ordered = [...templates].sort(
+  (a, b) => Number(b.official) - Number(a.official) || a.name.localeCompare(b.name),
+);
+---
+<Base
+  title="texshelf: LaTeX and Typst templates from the terminal"
+  description="Browse LaTeX and Typst templates and start a project from one with a single command."
+>
+  <section class="intro">
+    <h1>Start a LaTeX or Typst project from a template</h1>
+    <p>
+      Pick a template below, then create the project from your terminal. Each one is pinned
+      to a checked version and comes with a PDF preview.
+    </p>
+    <Copy text="texshelf init article my-paper" />
+  </section>
+
+  <form class="filters" id="filters" role="search" aria-label="Filter templates">
+    <label class="grow">
+      <span>Search</span>
+      <input type="search" name="q" placeholder="thesis, cv, ieee" autocomplete="off" />
+    </label>
+    <fieldset>
+      <legend>Engine</legend>
+      <label><input type="radio" name="engine" value="" checked /><span>All</span></label>
+      <label><input type="radio" name="engine" value="latex" /><span>LaTeX</span></label>
+      <label><input type="radio" name="engine" value="typst" /><span>Typst</span></label>
+    </fieldset>
+    <label>
+      <span>Category</span>
+      <select name="category">
+        <option value="">Any</option>
+        {categories.map((c) => <option value={c}>{c}</option>)}
+      </select>
+    </label>
+    <label>
+      <span>Sort by</span>
+      <select name="sort">
+        <option value="official">Official first</option>
+        <option value="stars">Stars</option>
+        <option value="newest">Newest</option>
+        <option value="name">Name</option>
+      </select>
+    </label>
+  </form>
+
+  <p class="count" id="count" aria-live="polite">{templates.length} templates</p>
+
+  <ul class="shelf" id="shelf">
+    {
+      ordered.map((t) => {
+        const v = latest(t);
+        return (
+          <li
+            data-name={t.name}
+            data-engine={t.engine}
+            data-categories={t.categories.join(" ")}
+            data-text={[t.name, t.title, t.description, ...t.keywords, ...t.categories]
+              .join(" ")
+              .toLowerCase()}
+            data-official={t.official ? 1 : 0}
+            data-stars={stars(t.name)}
+            data-updated={t.updated}
+          >
+            <a href={`/t/${t.name}`}>
+              <span class="stand">
+                {v.thumbnail ? (
+                  <img src={local(v.thumbnail)} alt={`First page of ${t.title}`} loading="lazy" />
+                ) : (
+                  <span class="blank">
+                    <span>{t.title}</span>
+                    <small>Preview not built yet</small>
+                  </span>
+                )}
+              </span>
+              <span class="tag">{t.name}</span>
+              <span class="what">{t.title}</span>
+              <span class="facts">
+                {engineName[t.engine]}, {t.license}
+                {t.official && <em>official</em>}
+              </span>
+            </a>
+          </li>
+        );
+      })
+    }
+  </ul>
+  <p class="empty" id="empty" hidden>
+    No template matches those filters. Clear the search or choose another category.
+  </p>
+
+  <script>
+    const form = document.getElementById("filters") as HTMLFormElement;
+    const shelf = document.getElementById("shelf")!;
+    const count = document.getElementById("count")!;
+    const empty = document.getElementById("empty")!;
+    const items = [...shelf.children] as HTMLElement[];
+
+    const params = new URLSearchParams(location.search);
+    for (const [key, value] of params) {
+      const field = form.elements.namedItem(key);
+      if (field instanceof RadioNodeList) field.value = value;
+      else if (field) (field as HTMLInputElement).value = value;
+    }
+
+    const order: Record<string, (a: HTMLElement, b: HTMLElement) => number> = {
+      official: (a, b) => Number(b.dataset.official) - Number(a.dataset.official),
+      stars: (a, b) => Number(b.dataset.stars) - Number(a.dataset.stars),
+      newest: (a, b) => b.dataset.updated!.localeCompare(a.dataset.updated!),
+      name: () => 0,
+    };
+
+    function apply() {
+      const data = new FormData(form);
+      const words = String(data.get("q") ?? "").toLowerCase().split(/\s+/).filter(Boolean);
+      const engine = String(data.get("engine") ?? "");
+      const category = String(data.get("category") ?? "");
+      const sort = String(data.get("sort") ?? "official");
+
+      let shown = 0;
+      for (const item of items) {
+        const ok =
+          (!engine || item.dataset.engine === engine) &&
+          (!category || item.dataset.categories!.split(" ").includes(category)) &&
+          words.every((w) => item.dataset.text!.includes(w));
+        item.hidden = !ok;
+        if (ok) shown += 1;
+      }
+      [...items]
+        .sort((a, b) => order[sort](a, b) || a.dataset.name!.localeCompare(b.dataset.name!))
+        .forEach((item) => shelf.append(item));
+
+      count.textContent = shown === 1 ? "1 template" : `${shown} templates`;
+      empty.hidden = shown > 0;
+
+      const next = new URLSearchParams();
+      for (const [key, value] of data) if (value && value !== "official") next.set(key, String(value));
+      history.replaceState(null, "", next.size ? `?${next}` : location.pathname);
+    }
+
+    form.addEventListener("input", apply);
+    form.addEventListener("submit", (event) => event.preventDefault());
+    apply();
+  </script>
+  <script>
+    document.addEventListener("click", async (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-copy]");
+      if (!button) return;
+      await navigator.clipboard.writeText(button.dataset.copy!);
+      const label = button.textContent;
+      button.textContent = "Copied";
+      setTimeout(() => (button.textContent = label), 1500);
+    });
+  </script>
+</Base>

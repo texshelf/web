@@ -1,0 +1,54 @@
+---
+import "@fontsource-variable/instrument-sans";
+import "@fontsource-variable/jetbrains-mono";
+import "../styles/tokens.css";
+import "../styles/site.css";
+
+interface Props {
+  title: string;
+  description: string;
+}
+const { title, description } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href="/brand/favicon.svg" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="top">
+      <a class="brand" href="/">
+        <img src="/brand/mark.svg" alt="" width="30" height="30" />
+        <span>texshelf</span>
+      </a>
+      <nav aria-label="Main">
+        <a href="/">Templates</a>
+        <a href="/docs">Docs</a>
+        <a href="https://github.com/texshelf">GitHub</a>
+      </nav>
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    <footer class="bottom">
+      <p>
+        texshelf and typshelf are open source, made by
+        <a href="https://jjsm.science">Juan José Sánchez Medina</a>.
+        Each template keeps its own license.
+      </p>
+      <p>
+        <a href="https://github.com/texshelf/registry">Add a template</a>
+        <a href="/v1/index.json">index.json</a>
+      </p>
+    </footer>
+  </body>
+</html>

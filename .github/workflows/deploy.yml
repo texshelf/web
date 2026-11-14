@@ -1,0 +1,108 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_call:
+    secrets:
+      CLOUDFLARE_API_TOKEN:
+        required: true
+      CLOUDFLARE_ACCOUNT_ID:
+        required: true
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-site
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    container: texlive/texlive:latest
+    steps:
+      - name: Install system tools
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git curl ca-certificates build-essential pkg-config poppler-utils
+
+      - uses: actions/checkout@v4
+        with:
+          repository: texshelf/web
+          path: web
+      - uses: actions/checkout@v4
+        with:
+          repository: texshelf/registry
+          path: registry
+      - uses: actions/checkout@v4
+        with:
+          repository: texshelf/brand
+          path: brand
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: typst-community/setup-typst@v4
+
+      - name: Find the current texshelf commit
+        id: tool
+        run: echo "sha=$(git ls-remote https://github.com/texshelf/texshelf HEAD | cut -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore texshelf-registry
+        id: tool-cache
+        uses: actions/cache@v4
+        with:
+          path: tool
+          key: texshelf-registry-${{ steps.tool.outputs.sha }}
+
+      - name: Build texshelf-registry
+        if: steps.tool-cache.outputs.cache-hit != 'true'
+        run: cargo install --locked --git https://github.com/texshelf/texshelf --root tool texshelf-registry
+
+      - name: Restore the previous registry output
+        uses: actions/cache/restore@v4
+        with:
+          path: previous
+          key: registry-output-${{ github.run_id }}
+          restore-keys: registry-output-
+
+      - name: Build archives, previews and the index
+        run: |
+          mkdir -p previous/v1
+          tool/bin/texshelf-registry build --registry registry --out dist/v1 --previous previous/v1
+
+      - name: Collect star counts
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: tool/bin/texshelf-registry stats --index dist/v1/index.json --out dist/v1/stats.json --previous previous/v1/stats.json
+
+      - name: Keep this output for the next run
+        run: |
+          rm -rf previous
+          cp -r dist previous
+
+      - uses: actions/cache/save@v4
+        with:
+          path: previous
+          key: registry-output-${{ github.run_id }}
+
+      - name: Build the site
+        working-directory: web
+        env:
+          REGISTRY_DIST: ../dist/v1
+          BRAND_DIR: ../brand
+        run: |
+          npm ci
+          npm run build
+
+      - name: Publish to Cloudflare Pages
+        working-directory: web
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler pages deploy dist --project-name texshelf --branch main
