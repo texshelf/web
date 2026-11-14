@@ -290,12 +290,14 @@ code {
 .stand img,
 .stand .blank {
   display: block;
+  box-sizing: border-box;
   max-width: 100%;
   max-height: 100%;
   width: auto;
   height: auto;
   background: var(--shelf-page);
-  box-shadow: 0 0 0 1px var(--shelf-line);
+  border: 1px solid var(--shelf-line);
+  border-bottom: 0;
   transform-origin: bottom center;
   transition: transform 0.15s ease-out;
 }
@@ -318,6 +320,7 @@ code {
 }
 
 .stand .blank {
+  box-shadow: none;
   display: flex;
   width: 10.6rem;
   height: 15rem;
@@ -348,6 +351,23 @@ code {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.tag.latex,
+.swatch.latex {
+  background: var(--shelf-latex);
+}
+
+.tag.typst,
+.swatch.typst {
+  background: var(--shelf-typst);
+}
+
+.swatch {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  margin-right: 0.45rem;
 }
 
 .what {
@@ -571,6 +591,46 @@ summary {
 
 .files li {
   overflow-wrap: anywhere;
+}
+
+details + details {
+  margin-top: 1rem;
+}
+
+.audit p {
+  margin: 0.75rem 0 0;
+  max-width: 38rem;
+  color: var(--shelf-muted);
+  font-size: 0.92rem;
+}
+
+.audit.failed summary {
+  color: #9b1c1c;
+}
+
+.findings {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  font-size: 0.9rem;
+}
+
+.findings li {
+  padding: 0.35rem 0 0.35rem 0.75rem;
+  border-left: 3px solid var(--shelf-label);
+}
+
+.findings li + li {
+  margin-top: 0.4rem;
+}
+
+.findings li.high {
+  border-left-color: #9b1c1c;
+}
+
+.findings code {
+  font-size: 0.82rem;
+  margin-right: 0.35rem;
 }
 
 .prose {

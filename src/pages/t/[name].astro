@@ -10,6 +10,7 @@ import {
   command,
   editorLink,
   engineName,
+  utc,
   kilobytes,
   type Template,
 } from "../../lib/registry";
@@ -24,6 +25,15 @@ const cli = command(t);
 const editor = editorLink(t, v);
 const starCount = stars(t.name);
 const downloadCount = downloads(t.name);
+const universities = t.universities ?? [];
+const audit = v.audit;
+const auditTitle = !audit
+  ? ""
+  : audit.status === "passed"
+    ? "Security check passed"
+    : audit.status === "failed"
+      ? "Security check failed"
+      : `Security check passed with ${audit.findings.length} ${audit.findings.length === 1 ? "note" : "notes"}`;
 const variables = Object.entries(v.variables ?? {});
 const withVars = variables.length
   ? `${cli} init ${t.name} my-project --var ${variables[0][0]}="${variables[0][1].default}"`
@@ -137,7 +147,21 @@ const tabs = [
         <dd>
           {engineName[t.engine]}
           {v.compiler && ` (${v.compiler}${v.bib && v.bib !== "none" ? `, ${v.bib}` : ""})`}
+          {v.typst && ` ${v.typst} or newer`}
         </dd>
+        {v.built_with && <dt>Preview built with</dt>}
+        {v.built_with && <dd>{v.built_with}</dd>}
+        {universities.length > 0 && <dt>{universities.length === 1 ? "University" : "Universities"}</dt>}
+        {universities.length > 0 && (
+          <dd>
+            {universities.map((u, i) => (
+              <>
+                {i > 0 && ", "}
+                <a href={`/?university=${encodeURIComponent(u)}`}>{u}</a>
+              </>
+            ))}
+          </dd>
+        )}
         <dt>License</dt>
         <dd><a href={`https://spdx.org/licenses/${t.license}.html`}>{t.license}</a></dd>
         <dt>Version</dt>
@@ -186,6 +210,32 @@ const tabs = [
           {v.files.map((f) => <li>{f}</li>)}
         </ul>
       </details>
+
+      {
+        audit && (
+          <details class={`audit ${audit.status}`}>
+            <summary>{auditTitle}</summary>
+            <p>
+              Checked on {utc(audit.at)}. {audit.scanned} files were scanned for programs, scripts,
+              shell commands, paths outside the template and leaked keys.
+              {audit.findings.length === 0 && " Nothing was found."}
+            </p>
+            {audit.findings.length > 0 && (
+              <ul class="findings">
+                {audit.findings.map((f) => (
+                  <li class={f.severity}>
+                    <code>{f.line ? `${f.file}:${f.line}` : f.file}</code> {f.message}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p>
+              {audit.log && <><a href={local(audit.log)}>Read the full log</a>. </>}
+              This is a pattern scan, so read a template's files before you compile anything you do not trust.
+            </p>
+          </details>
+        )
+      }
     </div>
   </div>
 

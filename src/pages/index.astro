@@ -1,7 +1,7 @@
 ---
 import Base from "../layouts/Base.astro";
 import Copy from "../components/Copy.astro";
-import { templates, stars, downloads, latest, local, engineName } from "../lib/registry";
+import { templates, stars, downloads, latest, local, compiler, universities } from "../lib/registry";
 
 const categories = [...new Set(templates.flatMap((t) => t.categories))].sort();
 const ordered = [...templates].sort(
@@ -29,8 +29,8 @@ const ordered = [...templates].sort(
     <fieldset>
       <legend>Engine</legend>
       <label><input type="radio" name="engine" value="" checked /><span>All</span></label>
-      <label><input type="radio" name="engine" value="latex" /><span>LaTeX</span></label>
-      <label><input type="radio" name="engine" value="typst" /><span>Typst</span></label>
+      <label><input type="radio" name="engine" value="latex" /><span><i class="swatch latex"></i>LaTeX</span></label>
+      <label><input type="radio" name="engine" value="typst" /><span><i class="swatch typst"></i>Typst</span></label>
     </fieldset>
     <label>
       <span>Category</span>
@@ -39,6 +39,17 @@ const ordered = [...templates].sort(
         {categories.map((c) => <option value={c}>{c}</option>)}
       </select>
     </label>
+    {
+      universities.length > 0 && (
+        <label>
+          <span>University</span>
+          <select name="university">
+            <option value="">Any</option>
+            {universities.map((u) => <option value={u}>{u}</option>)}
+          </select>
+        </label>
+      )
+    }
     <label>
       <span>Sort by</span>
       <select name="sort">
@@ -62,7 +73,8 @@ const ordered = [...templates].sort(
             data-name={t.name}
             data-engine={t.engine}
             data-categories={t.categories.join(" ")}
-            data-text={[t.name, t.title, t.description, ...t.keywords, ...t.categories]
+            data-universities={(t.universities ?? []).join("|")}
+            data-text={[t.name, t.title, t.description, ...t.keywords, ...t.categories, ...(t.universities ?? [])]
               .join(" ")
               .toLowerCase()}
             data-official={t.official ? 1 : 0}
@@ -81,10 +93,10 @@ const ordered = [...templates].sort(
                   </span>
                 )}
               </span>
-              <span class="tag">{t.name}</span>
+              <span class={`tag ${t.engine}`}>{t.name}</span>
               <span class="what">{t.title}</span>
               <span class="facts">
-                {engineName[t.engine]}, {t.license}
+                {compiler(t, v)}, {t.license}
                 {t.official && <em>official</em>}
               </span>
             </a>
@@ -124,6 +136,7 @@ const ordered = [...templates].sort(
       const words = String(data.get("q") ?? "").toLowerCase().split(/\s+/).filter(Boolean);
       const engine = String(data.get("engine") ?? "");
       const category = String(data.get("category") ?? "");
+      const university = String(data.get("university") ?? "");
       const sort = String(data.get("sort") ?? "official");
 
       let shown = 0;
@@ -131,6 +144,7 @@ const ordered = [...templates].sort(
         const ok =
           (!engine || item.dataset.engine === engine) &&
           (!category || item.dataset.categories!.split(" ").includes(category)) &&
+          (!university || item.dataset.universities!.split("|").includes(university)) &&
           words.every((w) => item.dataset.text!.includes(w));
         item.hidden = !ok;
         if (ok) shown += 1;

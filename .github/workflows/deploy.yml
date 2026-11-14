@@ -74,7 +74,7 @@ jobs:
       - name: Build archives, previews and the index
         run: |
           mkdir -p previous/v1
-          tool/bin/texshelf-registry build --registry registry --out dist/v1 --previous previous/v1 --download-url https://tex.jjsm.science/dl
+          tool/bin/texshelf-registry build --registry registry --out dist/v1 --previous previous/v1 --download-url https://tex.jjsm.science/dl --fail-on-audit
 
       - name: Collect star counts
         env:

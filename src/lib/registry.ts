@@ -25,6 +25,25 @@ export interface Version {
   preview?: string;
   thumbnail?: string;
   files: string[];
+  typst?: string;
+  built_with?: string;
+  audit?: Audit;
+}
+
+export interface Finding {
+  severity: "high" | "warn";
+  rule: string;
+  file: string;
+  line?: number;
+  message: string;
+}
+
+export interface Audit {
+  at: string;
+  status: "passed" | "warnings" | "failed";
+  scanned: number;
+  findings: Finding[];
+  log?: string;
 }
 
 export interface Template {
@@ -36,6 +55,7 @@ export interface Template {
   license: string;
   repository?: string;
   keywords: string[];
+  universities?: string[];
   categories: string[];
   official: boolean;
   verified: boolean;
@@ -94,6 +114,24 @@ export function editorLink(t: Template, v: Version): { label: string; href: stri
 }
 
 export const engineName = { latex: "LaTeX", typst: "Typst" } as const;
+
+/** The program that compiles a template: pdflatex, xelatex, lualatex, or Typst with its oldest supported version. */
+export function compiler(t: Template, v: Version): string {
+  if (t.engine === "latex") return v.compiler ?? "LaTeX";
+  return v.typst ? `Typst ${v.typst}+` : "Typst";
+}
+
+export const universities = [...new Set(templates.flatMap((t) => t.universities ?? []))].sort((a, b) =>
+  a.localeCompare(b),
+);
+
+/** "14 Nov 2026 at 07:00 UTC" from an ISO timestamp. */
+export function utc(stamp: string): string {
+  const date = new Date(stamp);
+  const day = date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  const time = date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
+  return `${day} at ${time} UTC`;
+}
 
 export function kilobytes(bytes: number): string {
   return bytes < 1024 * 1024
