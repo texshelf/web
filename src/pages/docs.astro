@@ -15,18 +15,97 @@ import Copy from "../components/Copy.astro";
     </p>
 
     <h2 id="install">Install</h2>
-    <p>On macOS and Linux, with Homebrew:</p>
-    <Copy text="brew install texshelf/tap/texshelf" />
-    <p>On macOS and Linux, without Homebrew:</p>
-    <Copy text="curl -fsSL https://tex.jjsm.science/install.sh | sh" />
-    <p>On Windows, in PowerShell:</p>
-    <Copy text="irm https://tex.jjsm.science/install.ps1 | iex" />
+    <div class="systems">
+      <fieldset class="system-pick">
+        <legend>Your system</legend>
+        <label><input type="radio" name="system" value="macos" checked /><span>macOS</span></label>
+        <label><input type="radio" name="system" value="linux" /><span>Linux</span></label>
+        <label><input type="radio" name="system" value="windows" /><span>Windows</span></label>
+        <label><input type="radio" name="system" value="source" /><span>From source</span></label>
+      </fieldset>
+
+      <section class="system" data-system="macos">
+        <h3>With Homebrew</h3>
+        <ol>
+          <li>Install texshelf from the project's tap:<Copy text="brew install texshelf/tap/texshelf" /></li>
+          <li>Check that it runs:<Copy text="texshelf --version" /></li>
+        </ol>
+        <h3>Without Homebrew</h3>
+        <ol>
+          <li>
+            Open Terminal and run the installer. It downloads the latest release, checks its SHA-256
+            and puts <code>texshelf</code> and <code>typshelf</code> in <code>~/.local/bin</code>:
+            <Copy text="curl -fsSL https://tex.jjsm.science/install.sh | sh" />
+          </li>
+          <li>
+            If the installer says the folder is not on your <code>PATH</code>, add it and open a new terminal:
+            <Copy text={`echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc`} />
+          </li>
+          <li>Check that it runs:<Copy text="texshelf --version" /></li>
+        </ol>
+      </section>
+
+      <section class="system" data-system="linux">
+        <h3>With Homebrew</h3>
+        <ol>
+          <li>Install texshelf from the project's tap:<Copy text="brew install texshelf/tap/texshelf" /></li>
+          <li>Check that it runs:<Copy text="texshelf --version" /></li>
+        </ol>
+        <h3>Without Homebrew</h3>
+        <p>Builds exist for x86-64 and ARM64. The installer needs <code>curl</code> and <code>tar</code>.</p>
+        <ol>
+          <li>
+            Run the installer. It downloads the latest release, checks its SHA-256 and puts
+            <code>texshelf</code> and <code>typshelf</code> in <code>~/.local/bin</code>:
+            <Copy text="curl -fsSL https://tex.jjsm.science/install.sh | sh" />
+          </li>
+          <li>
+            If the installer says the folder is not on your <code>PATH</code>, add it and open a new
+            terminal (use <code>~/.zshrc</code> if your shell is zsh):
+            <Copy text={`echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc`} />
+          </li>
+          <li>Check that it runs:<Copy text="texshelf --version" /></li>
+        </ol>
+      </section>
+
+      <section class="system" data-system="windows">
+        <ol>
+          <li>Open PowerShell. Administrator mode is not needed.</li>
+          <li>
+            Run the installer. It downloads the latest release, checks its SHA-256, puts
+            <code>texshelf.exe</code> and <code>typshelf.exe</code> in
+            <code>%LOCALAPPDATA%\texshelf\bin</code> and adds that folder to your <code>PATH</code>:
+            <Copy text="irm https://tex.jjsm.science/install.ps1 | iex" />
+          </li>
+          <li>
+            Open a new PowerShell window, so it picks up the new <code>PATH</code>, and check that it runs:
+            <Copy text="texshelf --version" />
+          </li>
+        </ol>
+      </section>
+
+      <section class="system" data-system="source">
+        <p>You need <a href="https://rustup.rs">Rust</a> 1.82 or newer.</p>
+        <ol>
+          <li>
+            Install the latest release from crates.io:
+            <Copy text="cargo install texshelf" />
+            Or the current <code>main</code> branch:
+            <Copy text="cargo install --git https://github.com/texshelf/texshelf texshelf" />
+          </li>
+          <li>Check that it runs:<Copy text="texshelf --version" /></li>
+        </ol>
+      </section>
+    </div>
     <p>
-      The scripts download the latest release from GitHub, check its SHA-256, and put both
-      commands in <code>~/.local/bin</code> (on Windows, <code>%LOCALAPPDATA%\texshelf\bin</code>).
-      With <a href="https://rustup.rs">Rust</a> you can build from source instead:
+      Both installers read <code>TEXSHELF_INSTALL_DIR</code> to install somewhere else and
+      <code>TEXSHELF_VERSION</code> to pin a release, such as <code>v0.2.1</code>.
     </p>
-    <Copy text="cargo install --git https://github.com/texshelf/texshelf texshelf" />
+    <p>
+      texshelf does not include a compiler. <code>texshelf doctor</code> lists the TeX and Typst
+      tools it finds, and <a href="#find"><code>texshelf tex install</code></a> installs one if you
+      have none.
+    </p>
 
     <h2 id="start">Create a project</h2>
     <Copy text="texshelf init article my-paper" />
@@ -94,6 +173,14 @@ import Copy from "../components/Copy.astro";
   </article>
 
   <script>
+    // Start on the visitor's own system; the radios still work without this.
+    const platform = ((navigator as any).userAgentData?.platform || navigator.userAgent).toLowerCase();
+    const system = platform.includes("windows") ? "windows" : /linux|x11|cros/.test(platform) && !platform.includes("android") ? "linux" : null;
+    if (system) {
+      const radio = document.querySelector<HTMLInputElement>(`input[name="system"][value="${system}"]`);
+      if (radio) radio.checked = true;
+    }
+
     document.addEventListener("click", async (event) => {
       const button = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-copy]");
       if (!button) return;

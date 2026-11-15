@@ -726,3 +726,65 @@ details + details {
     transition: none;
   }
 }
+
+.system-pick {
+  border: 0;
+  padding: 0;
+  margin: 0 0 1.2rem;
+}
+
+.system-pick legend {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0;
+  margin-bottom: 0.3rem;
+}
+
+.system-pick label {
+  display: inline-block;
+}
+
+.system-pick input {
+  position: absolute;
+  opacity: 0;
+}
+
+.system-pick span {
+  display: inline-block;
+  line-height: 2.5rem;
+  padding: 0 0.9rem;
+  border: 1px solid var(--shelf-ink);
+  margin: 0 -1px 0.4rem 0;
+  background: var(--shelf-page);
+  cursor: pointer;
+}
+
+.system-pick input:checked + span {
+  background: var(--shelf-ink);
+  color: var(--shelf-page);
+}
+
+.system-pick input:focus-visible + span {
+  outline: 3px solid var(--shelf-label);
+  outline-offset: 2px;
+}
+
+/* Only the chosen system's steps show; this works without JavaScript. */
+.system {
+  display: none;
+}
+
+.systems:has(input[value="macos"]:checked) [data-system="macos"],
+.systems:has(input[value="linux"]:checked) [data-system="linux"],
+.systems:has(input[value="windows"]:checked) [data-system="windows"],
+.systems:has(input[value="source"]:checked) [data-system="source"] {
+  display: block;
+}
+
+.system li {
+  margin-bottom: 0.9rem;
+}
+
+.system li .copy {
+  margin-top: 0.45rem;
+}
